@@ -17,3 +17,24 @@ def sign_up():
 
     return jsonify(new_user)
 
+app.tweets = []
+
+@app.route('/tweet', methods=['POST'])
+def tweet():
+    payload = request.json
+    user_id = int(payload['id'])
+    tweet   = payload
+
+    if user_id not in app.users:
+        return 'User does not exist', 400
+
+    elif len(tweet) > 300:
+        return 'Exceeded 300 characters', 400
+
+    else:
+        app.tweets.append({
+            'user_id' : user_id,
+            'tweet'   : tweet
+        })
+
+        return '', 200
