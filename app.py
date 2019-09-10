@@ -38,3 +38,46 @@ def tweet():
         })
 
         return '', 200
+
+@app.route('/follow', methods=['POST'])
+def follow():
+    payload   = request.json
+    user_id   = int(payload['id'])
+    id2follow = int(payload['follow'])
+
+    if user_id not in app.users or id2follow not in app.users:
+        return 'User does not exist', 400
+
+    user = app.users[user_id]
+    user.setdefault('follow', set()).add(id2follow)
+
+'''
+@app.route('/unfollow', methods=['POST'])
+def unfollow():
+    unfollow    = request.json
+    user_id     = int(unfollow['id'])
+    unfollow_id = int(unfollow['unfollow'])
+
+    if user_id not in app.users:
+        return 'User does not exist', 400
+    elif follow_id not in app.users:
+        return 'User does not exist', 400
+    else:
+        app.follow.remove({
+            'user_id': user_id,
+            'follow' : unfollow
+        })
+        
+        return 200
+'''
+
+from flask.json import JSONEncoder
+
+class CustomJSONEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+
+        return JSONEncoder.default(self, obj)
+
+app.json_encoder = CustomJSONEncoder
