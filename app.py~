@@ -42,8 +42,8 @@ def tweet():
 @app.route('/follow', methods=['POST'])
 def follow():
     payload   = request.json
-    user_id   = int(follow['id'])
-    id2follow = int(follow['follow'])
+    user_id   = int(payload['id'])
+    id2follow = int(payload['follow'])
 
     if user_id not in app.users or id2follow not in app.users:
         return 'User does not exist', 400
