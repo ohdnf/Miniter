@@ -51,25 +51,17 @@ def follow():
     user = app.users[user_id]
     user.setdefault('follow', set()).add(id2follow)
 
-'''
 @app.route('/unfollow', methods=['POST'])
 def unfollow():
-    unfollow    = request.json
-    user_id     = int(unfollow['id'])
-    unfollow_id = int(unfollow['unfollow'])
+    payload     = request.json
+    user_id     = int(payload['id'])
+    id2unfollow = int(payload['unfollow'])
 
-    if user_id not in app.users:
+    if user_id not in app.users or id2unfollow not in app.users:
         return 'User does not exist', 400
-    elif follow_id not in app.users:
-        return 'User does not exist', 400
-    else:
-        app.follow.remove({
-            'user_id': user_id,
-            'follow' : unfollow
-        })
-        
-        return 200
-'''
+
+    user = app.users[user_id]
+    user.setdefault('follow', set()).discard(id2unfollow)
 
 from flask.json import JSONEncoder
 
