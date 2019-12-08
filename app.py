@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask.json import JSONEncoder
 
-app = Flask(__name__)
+
+app          = Flask(__name__)
 app.id_count = 1
-app.users = {}
+app.users    = {}
 
 @app.route("/ping", methods=['GET'])
 def ping():
@@ -63,7 +65,6 @@ def unfollow():
     user = app.users[user_id]
     user.setdefault('follow', set()).discard(id2unfollow)
 
-from flask.json import JSONEncoder
 
 class CustomJSONEncoder(JSONEncoder):
     def default(self, obj):
@@ -74,7 +75,7 @@ class CustomJSONEncoder(JSONEncoder):
 
 app.json_encoder = CustomJSONEncoder
 
-@app.route('/timeline/<int:user_id>'. methods=['GET'])
+@app.route('/timeline/<int:user_id>', methods=['GET'])
 def timeline(user_id):
     if user_id not in app.users:
         return 'User does not exist', 400
