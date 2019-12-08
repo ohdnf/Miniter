@@ -2,9 +2,20 @@ from flask import Flask, request, jsonify
 from flask.json import JSONEncoder
 
 
-app          = Flask(__name__)
-app.id_count = 1
-app.users    = {}
+class CustomJSONEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+
+        return JSONEncoder.default(self, obj)
+
+app              = Flask(__name__)
+
+app.id_count     = 1
+app.users        = {}
+pp.tweets        = []
+app.json_encoder = CustomJSONEncoder
+
 
 @app.route("/ping", methods=['GET'])
 def ping():
@@ -18,8 +29,6 @@ def sign_up():
     app.id_count            = app.id_count + 1
 
     return jsonify(new_user)
-
-app.tweets = []
 
 @app.route('/tweet', methods=['POST'])
 def tweet():
@@ -64,16 +73,6 @@ def unfollow():
 
     user = app.users[user_id]
     user.setdefault('follow', set()).discard(id2unfollow)
-
-
-class CustomJSONEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
-
-        return JSONEncoder.default(self, obj)
-
-app.json_encoder = CustomJSONEncoder
 
 @app.route('/timeline/<int:user_id>', methods=['GET'])
 def timeline(user_id):
