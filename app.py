@@ -1,35 +1,61 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, current_app
 from flask.json import JSONEncoder
+from sqlalchemy import create_engine, text
 
 
-class CustomJSONEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
+def create_app(test_config = None):
+    app = Flask(__name__)
+    #do.init_app(app)
 
-        return JSONEncoder.default(self, obj)
+    if test_config is None:
+        app.config.from_pyfile("config.py")
+    else:
+        app.config.update(test_config)
 
-app              = Flask(__name__)
+    db = create_engine(app.config['DB_URL'], encoding = 'utf-8', max_overflow = 0)
+    app.database = db
 
-app.id_count     = 1
-app.users        = {}
-pp.tweets        = []
-app.json_encoder = CustomJSONEncoder
+    @app.route("/sign-up", methods=['POST'])
+    def sign_up():
+        new_user    = request.json
+        new_user_id = app.database.execute(text("""
+                    insert into users (
+                        name,
+                        email,
+                        profile,
+                        hashed_password
+                    ) values (
+                        :name,
+                        :email,
+                        :profile,
+                        :password
+                    )
+                """), new_user).lastrowid
+        row = current_app.database.execute(text("""
+                    select
+                        id,
+                        name,
+                        email,
+                        profile
+                    from users
+                    where id = :user_id
+                """), {
+                    'user_id' : new_user_id
+                }).fetchone()
+        created_user = {
+                'id' : row['id'],
+                'name' : row['name'],
+                'email' : row['email'],
+                'profile' : row['profile']
+            } if row else None
+
+        return jsonify(created_user)
+    
+    return app
+    
 
 
-@app.route("/ping", methods=['GET'])
-def ping():
-    return "pong"
-
-@app.route("/sign-up", methods=['POST'])
-def sign_up():
-    new_user                = request.json
-    new_user["id"]          = app.id_count
-    app.users[app.id_count] = new_user
-    app.id_count            = app.id_count + 1
-
-    return jsonify(new_user)
-
+'''
 @app.route('/tweet', methods=['POST'])
 def tweet():
     payload = request.json
@@ -87,3 +113,5 @@ def timeline(user_id):
         'user_id': user_id,
         'timeline': timeline
     })
+'''
+
