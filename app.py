@@ -1,7 +1,10 @@
-from flask import Flask, request, jsonify, current_app
+from flask import Flask, request, jsonify, current_app, Response
 from flask.json import JSONEncoder
 from sqlalchemy import create_engine, text
+from datetime import datetime, timedelta
+from functools import wraps
 import bcrypt, jwt
+
 
 
 class CustomJSONEncoder(JSONEncoder):
@@ -100,7 +103,7 @@ def get_timeline(user_id):
     } for tweet in timeline]
 
 
-def create_app(test_config = None):
+def create_app(test_config=None):
     app = Flask(__name__)
     #do.init_app(app)
 
@@ -125,7 +128,7 @@ def create_app(test_config = None):
         new_user = request.json
         new_user['password'] = bcrypt.hashpw(
                 new_user['password'].encode('UTF-8'),
-                bycrypt.gensalt()
+                bcrypt.gensalt()
         )
         new_user_id = insert_user(new_user)
         new_user_info = get_user(new_user_id)
@@ -138,13 +141,13 @@ def create_app(test_config = None):
         email = credential['email']
         password = credential['password']
 
-        row = database.execute(text("""
+        row = app.database.execute(text("""
             SELECT
                 id,
                 hashed_password
             FROM users
             WHERE email = :email
-        """), {'email': email}.fetchone()
+        """), {'email': email}).fetchone()
 
         if row and bcrypt.checkpw(password.encode('UTF-8'), row['hashed_password'].encode('UTF-8')):
             user_id = row['id']
