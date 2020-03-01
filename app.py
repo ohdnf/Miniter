@@ -15,6 +15,28 @@ class CustomJSONEncoder(JSONEncoder):
         return JSONEncoder.default(self, obj)
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        access_token = request.headers.get('Authorization')
+        if access_token is not None:
+            try:
+                payload = jwt.decode(access_token, current_app.config['JWT_SECRET_KEY'], 'HS256')
+            except jwt.InvalidTokenError:
+                payload = None
+            
+            if payload is None: return Response(status=401)
+
+            user_id = payload['user_id']
+            g.user_id = user_id
+            g.user = get_user_info(user_id) if user_id else None
+        else:
+            return Response(status=401)
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def get_user(user_id):
     user = current_app.database.execute(text("""
         SELECT
@@ -164,6 +186,7 @@ def create_app(test_config=None):
             return '', 401
     
     @app.route('/tweet', methods=['POST'])
+    @login_required
     def tweet():
         user_tweet = request.json
         tweet = user_tweet['tweet']
@@ -183,6 +206,7 @@ def create_app(test_config=None):
         })
 
     @app.route('/follow', methods=['POST'])
+    @login_required
     def follow():
         payload = request.json
         insert_follow(payload)
@@ -190,6 +214,7 @@ def create_app(test_config=None):
         return '', 200
 
     @app.route('/unfollow', methods=['POST'])
+    @login_required
     def unfollow():
         payload = request.json
         insert_unfollow(payload)
